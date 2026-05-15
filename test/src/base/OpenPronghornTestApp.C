@@ -49,7 +49,7 @@ OpenPronghornTestApp::registerAll(Factory & f, ActionFactory & af, Syntax & s, b
 void
 OpenPronghornTestApp::registerApps()
 {
-  registerApp(OpenPronghornApp);
+  OpenPronghornApp::registerApps();
   registerApp(OpenPronghornTestApp);
 }
 

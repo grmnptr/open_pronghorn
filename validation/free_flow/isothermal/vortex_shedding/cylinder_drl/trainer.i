@@ -1,0 +1,137 @@
+[StochasticTools]
+[]
+
+rollout_steps = 2000
+rollout_checkpoint = 'flow_out_cp/7000'
+training_iterations = 2000
+parallel_rollouts = 1
+
+drl_control_period_steps = 25
+drl_action_smoother = 0.19
+drl_action_scale = 1.0
+drl_min_action = -1e-2
+drl_max_action = 1e-2
+
+[Samplers]
+  [rollouts]
+    type = CartesianProduct
+    linear_space_items = '0 0 ${parallel_rollouts}'
+  []
+[]
+
+[MultiApps]
+  [runner]
+    type = SamplerFullSolveMultiApp
+    sampler = rollouts
+    input_files = 'flow_controlled.i'
+    mode = batch-reset
+    cli_args = 'run_steps=${rollout_steps};checkpoint_file_base=${rollout_checkpoint};drl_control_period_steps=${drl_control_period_steps};drl_action_smoother=${drl_action_smoother};drl_action_scale=${drl_action_scale};drl_min_action=${drl_min_action};drl_max_action=${drl_max_action};Outputs/checkpoint=false;Outputs/csv/execute_on=none;Outputs/probe_csv/execute_on=none;Outputs/reporter_json/execute_on=none'
+  []
+[]
+
+[Transfers]
+  [nn_transfer]
+    type = SamplerDRLControlTransfer
+    to_multi_app = runner
+    trainer_name = nn_trainer
+    control_name = src_control
+    sampler = rollouts
+  []
+  [r_transfer]
+    type = SamplerReporterTransfer
+    from_multi_app = runner
+    sampler = rollouts
+    stochastic_reporter = storage
+    from_reporter = 'drl_policy_data/probe0_vel_x:value
+                     drl_policy_data/probe0_vel_y:value
+                     drl_policy_data/probe1_vel_x:value
+                     drl_policy_data/probe1_vel_y:value
+                     drl_policy_data/probe2_vel_x:value
+                     drl_policy_data/probe2_vel_y:value
+                     drl_policy_data/probe3_vel_x:value
+                     drl_policy_data/probe3_vel_y:value
+                     drl_policy_data/probe4_vel_x:value
+                     drl_policy_data/probe4_vel_y:value
+                     drl_policy_data/jet_mfr_action:value
+                     drl_policy_data/jet_mfr_policy_action:value
+                     drl_policy_data/jet_mfr_log_probability:value
+                     drl_policy_data/reward:value
+                     drl_policy_data/reward_shifted:value
+                     drl_policy_data/drag_coeff:value
+                     drl_policy_data/lift_coeff:value'
+  []
+[]
+
+[Trainers]
+  [nn_trainer]
+    type = LibtorchDRLControlTrainer
+    observation = 'storage/r_transfer:drl_policy_data:probe0_vel_x:value
+                   storage/r_transfer:drl_policy_data:probe0_vel_y:value
+                   storage/r_transfer:drl_policy_data:probe1_vel_x:value
+                   storage/r_transfer:drl_policy_data:probe1_vel_y:value
+                   storage/r_transfer:drl_policy_data:probe2_vel_x:value
+                   storage/r_transfer:drl_policy_data:probe2_vel_y:value
+                   storage/r_transfer:drl_policy_data:probe3_vel_x:value
+                   storage/r_transfer:drl_policy_data:probe3_vel_y:value
+                   storage/r_transfer:drl_policy_data:probe4_vel_x:value
+                   storage/r_transfer:drl_policy_data:probe4_vel_y:value'
+    control = 'storage/r_transfer:drl_policy_data:jet_mfr_policy_action:value'
+    log_probability = 'storage/r_transfer:drl_policy_data:jet_mfr_log_probability:value'
+    reward = 'storage/r_transfer:drl_policy_data:reward_shifted:value'
+
+    input_timesteps = 1
+    observation_shift_factors = '0 0 0 0 0 0 0 0 0 0'
+    observation_scaling_factors = '1 1 1 1 1 1 1 1 1 1'
+    action_scaling_factors = ${drl_action_scale}
+    min_control_value = ${drl_min_action}
+    max_control_value = ${drl_max_action}
+
+    num_epochs = 25
+    update_frequency = 20
+    decay_factor = 0.99
+    lambda_factor = 0.97
+    timestep_window = ${drl_control_period_steps}
+    average_reward_over_timestep_window = true
+
+    critic_learning_rate = 0.001
+    num_critic_neurons_per_layer = '32 32'
+    critic_activation_functions = 'relu relu'
+
+    control_learning_rate = 0.001
+    num_control_neurons_per_layer = '512 512'
+    control_activation_functions = 'relu relu'
+
+    standardize_advantage = true
+    batch_size = 320
+    entropy_coeff = 0.01
+    filename_base = 'output/cylinder_drl'
+    read_from_file = false
+  []
+[]
+
+[Reporters]
+  [storage]
+    type = StochasticReporter
+    parallel_type = ROOT
+    outputs = none
+  []
+  [reward]
+    type = DRLRewardReporter
+    drl_trainer_name = nn_trainer
+  []
+[]
+
+[Executioner]
+  type = Transient
+  num_steps = ${training_iterations}
+[]
+
+[Outputs]
+  checkpoint = false
+  [json]
+    type = JSON
+    file_base = 'output/train_out'
+    time_step_interval = 1
+    execute_on = TIMESTEP_END
+  []
+[]

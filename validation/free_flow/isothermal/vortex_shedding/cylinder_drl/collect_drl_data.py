@@ -7,7 +7,7 @@ import os
 import sys
 
 
-DEFAULT_WINDOW_STEPS = 500
+DEFAULT_WINDOW_STEPS = 25
 DEFAULT_LIFT_WEIGHT = 0.2
 DEFAULT_DRAG_BASELINE = 3.205
 
@@ -59,6 +59,14 @@ def read_observation(path):
     if "id" in rows[0]:
         rows.sort(key=lambda row: int(float(row["id"])))
 
+    if "pressure" in rows[0]:
+        value_names = ["pressure"]
+    elif "vel_x" in rows[0] and "vel_y" in rows[0]:
+        value_names = ["vel_x", "vel_y"]
+    else:
+        coordinate_names = {"id", "x", "y", "z", "processor_id"}
+        value_names = [name for name in rows[0] if name not in coordinate_names]
+
     observation = []
     points = []
     for row in rows:
@@ -67,11 +75,12 @@ def read_observation(path):
                 "id": int(float(row["id"])) if "id" in row else len(points),
                 "x": scalar(row, "x"),
                 "y": scalar(row, "y"),
+                "z": scalar(row, "z", None),
             }
         )
-        observation.extend([scalar(row, "vel_x"), scalar(row, "vel_y")])
+        observation.extend(scalar(row, name) for name in value_names)
 
-    return observation, points
+    return observation, points, value_names
 
 
 def main():
@@ -92,6 +101,7 @@ def main():
     avg_drag = sum(scalar(row, "drag_coeff") for row in window) / len(window)
     avg_lift = sum(scalar(row, "lift_coeff") for row in window) / len(window)
     reward_windowed = -avg_drag - args.lift_weight * abs(avg_lift)
+    reward_shifted_windowed = args.drag_baseline + reward_windowed
 
     last = rows[-1]
     result = {
@@ -101,20 +111,22 @@ def main():
         "action": scalar(last, "jet_mfr_action", None),
         "drag_coeff": scalar(last, "drag_coeff"),
         "lift_coeff": scalar(last, "lift_coeff"),
-        "reward_instant": scalar(last, "reward"),
-        "reward_shifted_instant": scalar(last, "reward_shifted"),
+        "reward_action_window": scalar(last, "reward"),
+        "reward_instant": scalar(last, "reward_instant", None),
+        "reward_shifted_instant": scalar(last, "reward_shifted", None),
         "avg_drag_coeff": avg_drag,
         "avg_lift_coeff": avg_lift,
         "reward_windowed": reward_windowed,
-        "reward_shifted_windowed": args.drag_baseline + reward_windowed,
+        "reward_shifted_windowed": reward_shifted_windowed,
     }
 
     probes_csv = args.probes_csv or find_probe_csv(args.csv)
     if probes_csv and os.path.exists(probes_csv):
-        observation, points = read_observation(probes_csv)
+        observation, points, value_names = read_observation(probes_csv)
         result["probes_csv"] = probes_csv
         result["num_probe_points"] = len(points)
         result["observation_size"] = len(observation)
+        result["observation_variables"] = value_names
         if not args.summary_only:
             result["observation"] = observation
             result["probe_points"] = points

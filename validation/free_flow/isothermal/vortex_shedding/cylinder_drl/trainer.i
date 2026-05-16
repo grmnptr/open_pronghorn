@@ -11,6 +11,8 @@ drl_action_smoother = 0.19
 drl_action_scale = 1.0
 drl_min_action = -1e-2
 drl_max_action = 1e-2
+reward_lift_weight = 0.2
+reward_drag_baseline = 3.205
 
 [Samplers]
   [rollouts]
@@ -25,7 +27,7 @@ drl_max_action = 1e-2
     sampler = rollouts
     input_files = 'flow_controlled.i'
     mode = batch-reset
-    cli_args = 'run_steps=${rollout_steps};checkpoint_file_base=${rollout_checkpoint};drl_control_period_steps=${drl_control_period_steps};drl_action_smoother=${drl_action_smoother};drl_action_scale=${drl_action_scale};drl_min_action=${drl_min_action};drl_max_action=${drl_max_action};Outputs/checkpoint=false;Outputs/csv/execute_on=none;Outputs/probe_csv/execute_on=none;Outputs/reporter_json/execute_on=none'
+    cli_args = 'run_steps=${rollout_steps};checkpoint_file_base=${rollout_checkpoint};drl_control_period_steps=${drl_control_period_steps};drl_action_smoother=${drl_action_smoother};drl_action_scale=${drl_action_scale};drl_min_action=${drl_min_action};drl_max_action=${drl_max_action};reward_lift_weight=${reward_lift_weight};reward_drag_baseline=${reward_drag_baseline};Outputs/checkpoint=false;Outputs/csv/execute_on=none;Outputs/probe_csv/execute_on=none;Outputs/reporter_json/execute_on=none'
   []
 []
 
@@ -42,21 +44,16 @@ drl_max_action = 1e-2
     from_multi_app = runner
     sampler = rollouts
     stochastic_reporter = storage
-    from_reporter = 'drl_policy_data/probe0_vel_x:value
-                     drl_policy_data/probe0_vel_y:value
-                     drl_policy_data/probe1_vel_x:value
-                     drl_policy_data/probe1_vel_y:value
-                     drl_policy_data/probe2_vel_x:value
-                     drl_policy_data/probe2_vel_y:value
-                     drl_policy_data/probe3_vel_x:value
-                     drl_policy_data/probe3_vel_y:value
-                     drl_policy_data/probe4_vel_x:value
-                     drl_policy_data/probe4_vel_y:value
+    from_reporter = 'drl_policy_data/probe0_p:value
+                     drl_policy_data/probe1_p:value
+                     drl_policy_data/probe2_p:value
+                     drl_policy_data/probe3_p:value
+                     drl_policy_data/probe4_p:value
                      drl_policy_data/jet_mfr_action:value
                      drl_policy_data/jet_mfr_policy_action:value
                      drl_policy_data/jet_mfr_log_probability:value
                      drl_policy_data/reward:value
-                     drl_policy_data/reward_shifted:value
+                     drl_policy_data/reward_instant:value
                      drl_policy_data/drag_coeff:value
                      drl_policy_data/lift_coeff:value'
   []
@@ -65,23 +62,18 @@ drl_max_action = 1e-2
 [Trainers]
   [nn_trainer]
     type = LibtorchDRLControlTrainer
-    observation = 'storage/r_transfer:drl_policy_data:probe0_vel_x:value
-                   storage/r_transfer:drl_policy_data:probe0_vel_y:value
-                   storage/r_transfer:drl_policy_data:probe1_vel_x:value
-                   storage/r_transfer:drl_policy_data:probe1_vel_y:value
-                   storage/r_transfer:drl_policy_data:probe2_vel_x:value
-                   storage/r_transfer:drl_policy_data:probe2_vel_y:value
-                   storage/r_transfer:drl_policy_data:probe3_vel_x:value
-                   storage/r_transfer:drl_policy_data:probe3_vel_y:value
-                   storage/r_transfer:drl_policy_data:probe4_vel_x:value
-                   storage/r_transfer:drl_policy_data:probe4_vel_y:value'
+    observation = 'storage/r_transfer:drl_policy_data:probe0_p:value
+                   storage/r_transfer:drl_policy_data:probe1_p:value
+                   storage/r_transfer:drl_policy_data:probe2_p:value
+                   storage/r_transfer:drl_policy_data:probe3_p:value
+                   storage/r_transfer:drl_policy_data:probe4_p:value'
     control = 'storage/r_transfer:drl_policy_data:jet_mfr_policy_action:value'
     log_probability = 'storage/r_transfer:drl_policy_data:jet_mfr_log_probability:value'
-    reward = 'storage/r_transfer:drl_policy_data:reward_shifted:value'
+    reward = 'storage/r_transfer:drl_policy_data:reward:value'
 
     input_timesteps = 1
-    observation_shift_factors = '0 0 0 0 0 0 0 0 0 0'
-    observation_scaling_factors = '1 1 1 1 1 1 1 1 1 1'
+    observation_shift_factors = '0 0 0 0 0'
+    observation_scaling_factors = '1 1 1 1 1'
     action_scaling_factors = ${drl_action_scale}
     min_control_value = ${drl_min_action}
     max_control_value = ${drl_max_action}
@@ -91,7 +83,7 @@ drl_max_action = 1e-2
     decay_factor = 0.99
     lambda_factor = 0.97
     timestep_window = ${drl_control_period_steps}
-    average_reward_over_timestep_window = true
+    average_reward_over_timestep_window = false
 
     critic_learning_rate = 0.001
     num_critic_neurons_per_layer = '32 32'
@@ -104,7 +96,7 @@ drl_max_action = 1e-2
     standardize_advantage = true
     batch_size = 320
     entropy_coeff = 0.01
-    filename_base = 'output/cylinder_drl'
+    filename_base = 'cylinder_drl'
     read_from_file = false
   []
 []
@@ -130,7 +122,7 @@ drl_max_action = 1e-2
   checkpoint = false
   [json]
     type = JSON
-    file_base = 'output/train_out'
+    file_base = 'train_out'
     time_step_interval = 1
     execute_on = TIMESTEP_END
   []

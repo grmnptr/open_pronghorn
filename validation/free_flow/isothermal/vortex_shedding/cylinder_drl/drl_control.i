@@ -1,7 +1,6 @@
 # -----------------------------------------------------------------------------
 # Libtorch DRL control hook for stochastic-tools training
 # -----------------------------------------------------------------------------
-drl_control_period_steps = 25
 drl_action_smoother = 0.19
 drl_action_scale = 1.0
 drl_min_action = -1e-2
@@ -24,15 +23,11 @@ drl_max_action = 1e-2
   [src_control]
     type = LibtorchDRLControl
     parameters = 'Functions/jet_mfr_control/value'
-    observations = 'probe0_vel_x probe0_vel_y
-                    probe1_vel_x probe1_vel_y
-                    probe2_vel_x probe2_vel_y
-                    probe3_vel_x probe3_vel_y
-                    probe4_vel_x probe4_vel_y'
+    observations = 'probe0_p probe1_p probe2_p probe3_p probe4_p'
 
     input_timesteps = 1
-    observation_shift_factors = '0 0 0 0 0 0 0 0 0 0'
-    observation_scaling_factors = '1 1 1 1 1 1 1 1 1 1'
+    observation_shift_factors = '0 0 0 0 0'
+    observation_scaling_factors = '1 1 1 1 1'
     action_scaling_factors = ${drl_action_scale}
     min_control_value = ${drl_min_action}
     max_control_value = ${drl_max_action}
@@ -48,12 +43,8 @@ drl_max_action = 1e-2
 [Reporters]
   [drl_policy_data]
     type = AccumulateReporter
-    reporters = 'drag_coeff/value lift_coeff/value reward/value reward_shifted/value
+    reporters = 'drag_coeff/value lift_coeff/value reward/value reward_instant/value
                  jet_mfr_action/value jet_mfr_policy_action/value jet_mfr_log_probability/value
-                 probe0_vel_x/value probe0_vel_y/value
-                 probe1_vel_x/value probe1_vel_y/value
-                 probe2_vel_x/value probe2_vel_y/value
-                 probe3_vel_x/value probe3_vel_y/value
-                 probe4_vel_x/value probe4_vel_y/value'
+                 probe0_p/value probe1_p/value probe2_p/value probe3_p/value probe4_p/value'
   []
 []

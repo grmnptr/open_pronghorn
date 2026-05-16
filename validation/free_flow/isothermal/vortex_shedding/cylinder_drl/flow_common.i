@@ -254,7 +254,7 @@
     function = jet_mfr_control
     execute_on = 'INITIAL TIMESTEP_END'
   []
-  [reward]
+  [reward_instant]
     type = ParsedPostprocessor
     expression = '-drag_coeff - lift_weight*abs(lift_coeff)'
     constant_names = 'lift_weight'
@@ -262,12 +262,13 @@
     pp_names = 'drag_coeff lift_coeff'
     execute_on = 'INITIAL TIMESTEP_END'
   []
-  [reward_shifted]
-    type = ParsedPostprocessor
-    expression = 'baseline + reward'
-    constant_names = 'baseline'
-    constant_expressions = '${reward_drag_baseline}'
-    pp_names = 'reward'
+  [reward]
+    type = CylinderDRLReward
+    drag = drag_coeff
+    lift = lift_coeff
+    timestep_window = ${drl_control_period_steps}
+    drag_baseline = ${reward_drag_baseline}
+    lift_weight = ${reward_lift_weight}
     execute_on = 'INITIAL TIMESTEP_END'
   []
 []
@@ -277,12 +278,8 @@
 [Reporters]
   [drl_data]
     type = AccumulateReporter
-    reporters = 'drag_coeff/value lift_coeff/value reward/value reward_shifted/value jet_mfr_action/value
-                 probe0_vel_x/value probe0_vel_y/value
-                 probe1_vel_x/value probe1_vel_y/value
-                 probe2_vel_x/value probe2_vel_y/value
-                 probe3_vel_x/value probe3_vel_y/value
-                 probe4_vel_x/value probe4_vel_y/value'
+    reporters = 'drag_coeff/value lift_coeff/value reward/value reward_instant/value jet_mfr_action/value
+                 probe0_p/value probe1_p/value probe2_p/value probe3_p/value probe4_p/value'
   []
 []
 
@@ -320,12 +317,8 @@
     file_base = '${drl_file_base}_csv'
     execute_on = 'TIMESTEP_END FINAL'
     execute_vector_postprocessors_on = none
-    show = 'drag_coeff jet_mfr_action lift_coeff reward reward_shifted
-            probe0_vel_x probe0_vel_y
-            probe1_vel_x probe1_vel_y
-            probe2_vel_x probe2_vel_y
-            probe3_vel_x probe3_vel_y
-            probe4_vel_x probe4_vel_y'
+    show = 'drag_coeff jet_mfr_action lift_coeff reward reward_instant
+            probe0_p probe1_p probe2_p probe3_p probe4_p'
   []
   [probe_csv]
     type = CSV

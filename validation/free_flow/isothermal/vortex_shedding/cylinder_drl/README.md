@@ -66,11 +66,13 @@ negative to the bottom jet, enforcing zero net synthetic-jet mass flow.
 The DRL data hooks are included in `flow_common.i`:
 
 - `jet_mfr_action`: the scalar action written to CSV
-- `reward`: instantaneous `-drag_coeff - 0.2*abs(lift_coeff)`
-- `reward_shifted`: `reward_drag_baseline + reward`, useful for near-zero baseline logging
-- `observation_probes`: five velocity probes in a vertical wake rake at `x = 0.15`,
-  sampled at `INITIAL` and every timestep and sorted by probe id for final CSV output
-- `probe0_vel_x` through `probe4_vel_y`: scalar probe postprocessors used as
+- `reward`: completed action-window reward from `CylinderDRLReward`,
+  `reward_drag_baseline - mean(drag_coeff) - 0.2*abs(mean(lift_coeff))`
+- `reward_instant`: diagnostic instantaneous `-drag_coeff - 0.2*abs(lift_coeff)`
+- `observation_probes`: the reduced five pressure probes from the source/paper
+  layout, sampled at `INITIAL` and every timestep and sorted by probe id for
+  final CSV output
+- `probe0_p` through `probe4_p`: scalar pressure probe postprocessors used as
   libtorch DRL observation components
 - `drl_data`: an `AccumulateReporter` with scalar histories for
   stochastic-tools/MultiApp training workflows
@@ -83,12 +85,12 @@ a windowed reward:
 
 ```bash
 mpiexec -n 8 ../../../../../open_pronghorn-opt -i flow_restart.i \
-  checkpoint_file_base=flow_out_cp/7000 run_steps=250 \
+  checkpoint_file_base=flow_out_cp/7000 run_steps=25 \
   jet_mfr=1e-4 drl_file_base=action_0001 Outputs/file_base=action_0001_state
 ./collect_drl_data.py action_0001_csv.csv --summary-only
 ```
 
-The collector computes the paper-style one-cycle reward from the last 500
+The collector computes the source-style action-window reward from the last 25
 scalar samples by default. Override that with `--window-steps`:
 
 ```text
@@ -102,11 +104,9 @@ shipped DRL example:
 ```text
 drl_data/reward:value
 drl_data/jet_mfr_action:value
-drl_data/probe0_vel_x:value
-drl_data/probe0_vel_y:value
+drl_data/probe0_p:value
 ...
-drl_data/probe4_vel_x:value
-drl_data/probe4_vel_y:value
+drl_data/probe4_p:value
 ```
 
 `flow_controlled.i` is the sub-app input for stochastic-tools training. It
@@ -126,23 +126,29 @@ the controlled sub-app. `trainer.i` suppresses sub-app CSV, probe CSV, reporter
 JSON, and checkpoint output during rollouts because the trainer receives the
 accumulated reporter data by transfer.
 
-The DRL settings follow the cloned Python example while keeping only the 5-probe
-observation vector. The original example uses `dt = 5e-4`, 80 actions per
-episode, 50 solver steps per action, `smooth_control = 0.1`, action bounds
-`[-1e-2, 1e-2]`, 20 episodes per PPO update, 25 optimization passes, a 512x512
-actor, and a 32x32 critic. This MOOSE input uses `dt = 1e-3`, so the equivalent
-physical action interval is 25 solver steps. The per-step relaxation is adjusted
-to `1 - (1 - 0.1)^2 = 0.19`, giving the same physical relaxation over the
-longer timestep. Rewards are averaged over each 25-step action interval before
-being passed to PPO, matching the example's data collection pattern.
+The DRL settings follow the cloned Python example while keeping only the reduced
+5-pressure-probe observation vector. The probes are at `(0, 0.07)`,
+`(0, -0.07)`, `(0.075, 0.1)`, `(0.075, 0)`, and `(0.075, -0.1)`. The original
+example uses `dt = 5e-4`, 80 actions per episode, 50 solver steps per action,
+`smooth_control = 0.1`, action bounds `[-1e-2, 1e-2]`, 20 episodes per PPO
+update, 25 optimization passes, a 512x512 actor, and a 32x32 critic. This MOOSE
+input uses `dt = 1e-3`, so the equivalent physical action interval is 25 solver
+steps. The per-step relaxation is adjusted to `1 - (1 - 0.1)^2 = 0.19`, giving
+the same physical relaxation over the longer timestep. During training, the
+OpenPronghorn `CylinderDRLReward` postprocessor computes the completed
+action-window reward, and the stochastic-tools trainer simply downsamples that
+scalar at action boundaries.
 
 The trainer transfers these policy reporters from the sub-app:
 
 ```text
-drl_policy_data/probe0_vel_x:value ... drl_policy_data/probe4_vel_y:value
+drl_policy_data/probe0_p:value ... drl_policy_data/probe4_p:value
 drl_policy_data/jet_mfr_policy_action:value
 drl_policy_data/jet_mfr_log_probability:value
-drl_policy_data/reward_shifted:value
+drl_policy_data/reward:value
+drl_policy_data/reward_instant:value
+drl_policy_data/drag_coeff:value
+drl_policy_data/lift_coeff:value
 ```
 
 `flow_generated_mesh.i` runs directly from the mesh generators. `flow.i` loads

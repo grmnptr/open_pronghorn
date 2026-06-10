@@ -2,7 +2,7 @@
 []
 
 rollout_steps = 2000
-checkpoint_file_prefix = 'flow_out_cp'
+checkpoint_file_prefix = 'saved_cp'
 training_iterations = 2000
 parallel_rollouts = 10
 
@@ -17,9 +17,10 @@ reward_drag_baseline = 3.205
 [Samplers]
   [rollouts]
     type = CartesianProduct
-    # checkpoint_step = 5250, 5500, ..., 7500
     linear_space_items = '5250 250 ${parallel_rollouts}'
-    execute_on = 'INITIAL PRE_MULTIAPP_SETUP'
+    min_procs_per_row = 24
+    max_procs_per_row = 24
+    execute_on = PRE_MULTIAPP_SETUP
   []
 []
 
@@ -30,6 +31,8 @@ reward_drag_baseline = 3.205
     input_files = 'flow_controlled.i'
     mode = batch-reset
     cli_args = 'run_steps=${rollout_steps};checkpoint_file_prefix=${checkpoint_file_prefix};drl_control_period_steps=${drl_control_period_steps};drl_action_smoother=${drl_action_smoother};drl_action_scale=${drl_action_scale};drl_min_action=${drl_min_action};drl_max_action=${drl_max_action};reward_lift_weight=${reward_lift_weight};reward_drag_baseline=${reward_drag_baseline};Outputs/checkpoint/enable=false;Outputs/csv/execute_on=none;Outputs/probe_csv/execute_on=none;Outputs/reporter_json/execute_on=none'
+    min_procs_per_app = 24
+    max_procs_per_app = 24
   []
 []
 
@@ -68,6 +71,13 @@ reward_drag_baseline = 3.205
                      drl_policy_data/drag_coeff:value
                      drl_policy_data/lift_coeff:value'
   []
+[]
+
+[Controls/checkpoint_step]
+  type = MultiAppSamplerControl
+  multi_app = runner
+  sampler = rollouts
+  param_names = 'checkpoint_step'
 []
 
 [Trainers]

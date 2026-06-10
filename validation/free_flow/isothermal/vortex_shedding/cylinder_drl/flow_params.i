@@ -22,7 +22,7 @@ jet_profile_scale = 3057.7423757286047
 reward_lift_weight = 0.2
 reward_drag_baseline = 3.205
 drl_control_period_steps = 25
-drl_file_base = 'flow'
+# drl_file_base = 'flow'
 checkpoint_interval = 250
 checkpoint_num_files = 10
 # -----------------------------------------------------------------------------

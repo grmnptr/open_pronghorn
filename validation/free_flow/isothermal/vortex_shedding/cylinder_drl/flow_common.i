@@ -314,7 +314,7 @@
   console = false
   [csv]
     type = CSV
-    file_base = '${drl_file_base}_csv'
+    # file_base = '${drl_file_base}_csv'
     execute_on = 'TIMESTEP_END FINAL'
     execute_vector_postprocessors_on = none
     show = 'drag_coeff jet_mfr_action lift_coeff reward reward_instant
@@ -322,7 +322,7 @@
   []
   [probe_csv]
     type = CSV
-    file_base = '${drl_file_base}_probes'
+    # file_base = '${drl_file_base}_probes'
     execute_on = FINAL
     execute_postprocessors_on = none
     execute_vector_postprocessors_on = FINAL
@@ -331,9 +331,10 @@
   []
   [reporter_json]
     type = JSON
-    file_base = '${drl_file_base}_reporters'
+    # file_base = '${drl_file_base}_reporters'
     execute_on = FINAL
   []
+  # exodus = true
   [checkpoint]
     type = Checkpoint
     time_step_interval = ${checkpoint_interval}

@@ -1,4 +1,6 @@
-checkpoint_file_base = 'flow_out_cp/7000'
+checkpoint_file_prefix = 'flow_out_cp'
+checkpoint_step = 7000
+checkpoint_file_base = '${checkpoint_file_prefix}/${checkpoint_step}'
 run_steps = 7000
 
 !include flow_params.i

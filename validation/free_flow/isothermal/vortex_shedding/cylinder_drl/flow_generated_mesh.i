@@ -1,4 +1,4 @@
-run_steps = 7000
+run_steps = 7500
 
 !include header.i
 !include mesh.i

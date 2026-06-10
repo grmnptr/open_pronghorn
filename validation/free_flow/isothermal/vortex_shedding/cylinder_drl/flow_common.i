@@ -334,6 +334,10 @@
     file_base = '${drl_file_base}_reporters'
     execute_on = FINAL
   []
-  # exodus = true
-  checkpoint = true
+  [checkpoint]
+    type = Checkpoint
+    time_step_interval = ${checkpoint_interval}
+    num_files = ${checkpoint_num_files}
+    wall_time_checkpoint = false
+  []
 []

@@ -24,7 +24,7 @@ saved checkpoint:
 mpiexec -n 8 ../../../../../open_pronghorn-opt -i flow_restart.i
 ```
 
-Both wrappers default to `run_steps = 7000`. The restart wrapper defaults to
+The cold-start wrapper defaults to `run_steps = 7500`. The restart wrapper defaults to
 `flow_out_cp/7000`, then runs `run_steps` transient steps from that saved state.
 Override either value on the command line:
 
@@ -34,6 +34,10 @@ mpiexec -n 8 ../../../../../open_pronghorn-opt -i flow_restart.i checkpoint_file
 
 Checkpoint restarts are partition-specific, so restart with the same MPI rank
 count used to write the checkpoint.
+
+The checkpoint output keeps the last ten checkpoints at 250-step intervals. A
+default `flow.i` run therefore retains the phase-balanced DRL restart set
+`5250, 5500, 5750, 6000, 6250, 6500, 6750, 7000, 7250, 7500`.
 
 The RL actuation hooks follow the paper/source setup: two cylinder-normal jets
 centered at 90 and 270 degrees. The target paper width is 10 degrees; this

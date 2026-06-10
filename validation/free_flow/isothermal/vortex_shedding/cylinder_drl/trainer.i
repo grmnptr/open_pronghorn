@@ -2,9 +2,9 @@
 []
 
 rollout_steps = 2000
-rollout_checkpoint = 'flow_out_cp/7000'
+checkpoint_file_prefix = 'flow_out_cp'
 training_iterations = 2000
-parallel_rollouts = 1
+parallel_rollouts = 10
 
 drl_control_period_steps = 25
 drl_action_smoother = 0.19
@@ -17,7 +17,9 @@ reward_drag_baseline = 3.205
 [Samplers]
   [rollouts]
     type = CartesianProduct
-    linear_space_items = '0 0 ${parallel_rollouts}'
+    # checkpoint_step = 5250, 5500, ..., 7500
+    linear_space_items = '5250 250 ${parallel_rollouts}'
+    execute_on = 'INITIAL PRE_MULTIAPP_SETUP'
   []
 []
 
@@ -27,7 +29,16 @@ reward_drag_baseline = 3.205
     sampler = rollouts
     input_files = 'flow_controlled.i'
     mode = batch-reset
-    cli_args = 'run_steps=${rollout_steps};checkpoint_file_base=${rollout_checkpoint};drl_control_period_steps=${drl_control_period_steps};drl_action_smoother=${drl_action_smoother};drl_action_scale=${drl_action_scale};drl_min_action=${drl_min_action};drl_max_action=${drl_max_action};reward_lift_weight=${reward_lift_weight};reward_drag_baseline=${reward_drag_baseline};Outputs/checkpoint=false;Outputs/csv/execute_on=none;Outputs/probe_csv/execute_on=none;Outputs/reporter_json/execute_on=none'
+    cli_args = 'run_steps=${rollout_steps};checkpoint_file_prefix=${checkpoint_file_prefix};drl_control_period_steps=${drl_control_period_steps};drl_action_smoother=${drl_action_smoother};drl_action_scale=${drl_action_scale};drl_min_action=${drl_min_action};drl_max_action=${drl_max_action};reward_lift_weight=${reward_lift_weight};reward_drag_baseline=${reward_drag_baseline};Outputs/checkpoint/enable=false;Outputs/csv/execute_on=none;Outputs/probe_csv/execute_on=none;Outputs/reporter_json/execute_on=none'
+  []
+[]
+
+[Controls]
+  [checkpoint_step]
+    type = MultiAppSamplerControl
+    multi_app = runner
+    sampler = rollouts
+    param_names = 'checkpoint_step'
   []
 []
 
@@ -78,10 +89,12 @@ reward_drag_baseline = 3.205
     min_control_value = ${drl_min_action}
     max_control_value = ${drl_max_action}
 
-    num_epochs = 25
-    update_frequency = 20
+    num_epochs = 5
+    update_frequency = 2
+
     decay_factor = 0.99
     lambda_factor = 0.97
+    clip_parameter = 0.2
     timestep_window = ${drl_control_period_steps}
     average_reward_over_timestep_window = false
 
@@ -93,7 +106,7 @@ reward_drag_baseline = 3.205
     num_control_neurons_per_layer = '512 512'
     control_activation_functions = 'relu relu'
 
-    standardize_advantage = true
+    standardize_advantage = false
     batch_size = 320
     entropy_coeff = 0.01
     filename_base = 'cylinder_drl'

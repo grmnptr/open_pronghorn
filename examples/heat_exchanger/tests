@@ -1,0 +1,170 @@
+[Tests]
+  design = 'LinearFVDirichletCHTBC.md LinearFVRobinCHTBC.md LinearFVTurbulentViscosityWallFunctionBC.md '
+           'LinearFVTemperatureWallFunctionBC.md kEpsilonViscosityAux.md'
+  issues = '#TBD'
+  # Dirichlet-Neumann CHT: Dirichlet on the fluid side, Robin on the solid
+  # side. Each pair runs the same case with the fluid on the FaceInfo ELEM
+  # side (fluid_elem) and on the NEIGHBOR side (fluid_neighbor) of every
+  # interface face. Both write the same file_base and compare against one
+  # gold file, so results that depend on the face orientation fail the
+  # CSVDiff.
+  [turbulent_cht]
+    requirement = 'The system shall be able to solve conjugate heat transfer with a k-epsilon turbulence model and wall functions on internal fluid/solid interfaces in the linear segregated solver, with Dirichlet-Neumann coupling and results independent of which side of the interface owns the face, for'
+    [sym_fluid_elem]
+      type = CSVDiff
+      input = turbulent_cht_channel.i
+      cli_args = "Outputs/file_base=sym_out Outputs/exodus=false"
+      csvdiff = 'sym_out.csv sym_out_fluid_profile_0001.csv '
+                'sym_out_solid_bottom_profile_0001.csv sym_out_solid_top_profile_0001.csv'
+      detail = 'equal wall temperatures, fluid on the element side of the interface faces,'
+      recover = false # we don't support recovery for SIMPLE yet
+      max_threads = 1 # see libmesh issue #3808
+    []
+    [sym_fluid_neighbor]
+      type = CSVDiff
+      input = turbulent_cht_channel.i
+      cli_args = "fluid_first_blocks='solid_bottom solid_top fluid' fluid_is_elem=0 "
+                 "Outputs/file_base=sym_out Outputs/exodus=false"
+      csvdiff = 'sym_out.csv sym_out_fluid_profile_0001.csv '
+                'sym_out_solid_bottom_profile_0001.csv sym_out_solid_top_profile_0001.csv'
+      prereq = 'turbulent_cht/sym_fluid_elem'
+      detail = 'equal wall temperatures, fluid on the neighbor side of the interface faces,'
+      recover = false # we don't support recovery for SIMPLE yet
+      max_threads = 1 # see libmesh issue #3808
+    []
+    [asym_fluid_elem]
+      type = CSVDiff
+      input = turbulent_cht_channel.i
+      cli_args = "T_top=250 "
+                 "Outputs/file_base=asym_out Outputs/exodus=false"
+      csvdiff = 'asym_out.csv asym_out_fluid_profile_0001.csv '
+                'asym_out_solid_bottom_profile_0001.csv asym_out_solid_top_profile_0001.csv'
+      detail = 'heat crossing the channel, fluid on the element side of the interface faces,'
+      recover = false # we don't support recovery for SIMPLE yet
+      max_threads = 1 # see libmesh issue #3808
+    []
+    [asym_fluid_neighbor]
+      type = CSVDiff
+      input = turbulent_cht_channel.i
+      cli_args = "T_top=250 "
+                 "fluid_first_blocks='solid_bottom solid_top fluid' fluid_is_elem=0 "
+                 "Outputs/file_base=asym_out Outputs/exodus=false"
+      csvdiff = 'asym_out.csv asym_out_fluid_profile_0001.csv '
+                'asym_out_solid_bottom_profile_0001.csv asym_out_solid_top_profile_0001.csv'
+      prereq = 'turbulent_cht/asym_fluid_elem'
+      detail = 'heat crossing the channel, fluid on the neighbor side of the interface faces,'
+      recover = false # we don't support recovery for SIMPLE yet
+      max_threads = 1 # see libmesh issue #3808
+    []
+    [sodium_fluid_elem]
+      type = CSVDiff
+      input = turbulent_cht_channel.i
+      cli_args = "T_top=250 Pr=0.005 "
+                 "Outputs/file_base=sodium_out Outputs/exodus=false"
+      csvdiff = 'sodium_out.csv sodium_out_fluid_profile_0001.csv '
+                'sodium_out_solid_bottom_profile_0001.csv sodium_out_solid_top_profile_0001.csv'
+      detail = 'a liquid-metal Prandtl number of 0.005, fluid on the element side of the interface faces,'
+      recover = false # we don't support recovery for SIMPLE yet
+      max_threads = 1 # see libmesh issue #3808
+    []
+    [sodium_fluid_neighbor]
+      type = CSVDiff
+      input = turbulent_cht_channel.i
+      cli_args = "T_top=250 Pr=0.005 "
+                 "fluid_first_blocks='solid_bottom solid_top fluid' fluid_is_elem=0 "
+                 "Outputs/file_base=sodium_out Outputs/exodus=false"
+      csvdiff = 'sodium_out.csv sodium_out_fluid_profile_0001.csv '
+                'sodium_out_solid_bottom_profile_0001.csv sodium_out_solid_top_profile_0001.csv'
+      prereq = 'turbulent_cht/sodium_fluid_elem'
+      detail = 'a liquid-metal Prandtl number of 0.005, fluid on the neighbor side of the interface faces,'
+      recover = false # we don't support recovery for SIMPLE yet
+      max_threads = 1 # see libmesh issue #3808
+    []
+    [wf_asym_fluid_elem]
+      type = CSVDiff
+      input = turbulent_cht_channel.i
+      cli_args = "T_top=250 k_eff_name=k_eff_wf "
+                 "Outputs/file_base=wf_asym_out Outputs/exodus=false"
+      csvdiff = 'wf_asym_out.csv wf_asym_out_fluid_profile_0001.csv '
+                'wf_asym_out_solid_bottom_profile_0001.csv wf_asym_out_solid_top_profile_0001.csv'
+      detail = 'the thermal wall function and heat crossing the channel, fluid on the element side of the interface faces,'
+      recover = false # we don't support recovery for SIMPLE yet
+      max_threads = 1 # see libmesh issue #3808
+    []
+    [wf_asym_fluid_neighbor]
+      type = CSVDiff
+      input = turbulent_cht_channel.i
+      cli_args = "T_top=250 k_eff_name=k_eff_wf "
+                 "fluid_first_blocks='solid_bottom solid_top fluid' fluid_is_elem=0 "
+                 "Outputs/file_base=wf_asym_out Outputs/exodus=false"
+      csvdiff = 'wf_asym_out.csv wf_asym_out_fluid_profile_0001.csv '
+                'wf_asym_out_solid_bottom_profile_0001.csv wf_asym_out_solid_top_profile_0001.csv'
+      prereq = 'turbulent_cht/wf_asym_fluid_elem'
+      detail = 'the thermal wall function and heat crossing the channel, fluid on the neighbor side of the interface faces,'
+      recover = false # we don't support recovery for SIMPLE yet
+      max_threads = 1 # see libmesh issue #3808
+    []
+    [wf_sodium_fluid_elem]
+      type = CSVDiff
+      input = turbulent_cht_channel.i
+      cli_args = "T_top=250 Pr=0.005 k_eff_name=k_eff_wf "
+                 "Outputs/file_base=wf_sodium_out Outputs/exodus=false"
+      csvdiff = 'wf_sodium_out.csv wf_sodium_out_fluid_profile_0001.csv '
+                'wf_sodium_out_solid_bottom_profile_0001.csv wf_sodium_out_solid_top_profile_0001.csv'
+      detail = 'the thermal wall function at a Prandtl number of 0.005, fluid on the element side of the interface faces,'
+      recover = false # we don't support recovery for SIMPLE yet
+      max_threads = 1 # see libmesh issue #3808
+    []
+    [wf_sodium_fluid_neighbor]
+      type = CSVDiff
+      input = turbulent_cht_channel.i
+      cli_args = "T_top=250 Pr=0.005 k_eff_name=k_eff_wf "
+                 "fluid_first_blocks='solid_bottom solid_top fluid' fluid_is_elem=0 "
+                 "Outputs/file_base=wf_sodium_out Outputs/exodus=false"
+      csvdiff = 'wf_sodium_out.csv wf_sodium_out_fluid_profile_0001.csv '
+                'wf_sodium_out_solid_bottom_profile_0001.csv wf_sodium_out_solid_top_profile_0001.csv'
+      prereq = 'turbulent_cht/wf_sodium_fluid_elem'
+      detail = 'the thermal wall function at a Prandtl number of 0.005, fluid on the neighbor side of the interface faces,'
+      recover = false # we don't support recovery for SIMPLE yet
+      max_threads = 1 # see libmesh issue #3808
+    []
+    [kays_sodium_fluid_elem]
+      type = CSVDiff
+      input = turbulent_cht_channel.i
+      cli_args = "T_top=250 Pr=0.005 Pr_t_kays=1 "
+                 "Outputs/file_base=kays_sodium_out Outputs/exodus=false"
+      csvdiff = 'kays_sodium_out.csv kays_sodium_out_fluid_profile_0001.csv '
+                'kays_sodium_out_solid_bottom_profile_0001.csv kays_sodium_out_solid_top_profile_0001.csv'
+      detail = 'the Kays turbulent Prandtl number model at a Prandtl number of 0.005, fluid on the element side of the interface faces,'
+      recover = false # we don't support recovery for SIMPLE yet
+      max_threads = 1 # see libmesh issue #3808
+    []
+    [kays_sodium_fluid_neighbor]
+      type = CSVDiff
+      input = turbulent_cht_channel.i
+      cli_args = "T_top=250 Pr=0.005 Pr_t_kays=1 "
+                 "fluid_first_blocks='solid_bottom solid_top fluid' fluid_is_elem=0 "
+                 "Outputs/file_base=kays_sodium_out Outputs/exodus=false"
+      csvdiff = 'kays_sodium_out.csv kays_sodium_out_fluid_profile_0001.csv '
+                'kays_sodium_out_solid_bottom_profile_0001.csv kays_sodium_out_solid_top_profile_0001.csv'
+      prereq = 'turbulent_cht/kays_sodium_fluid_elem'
+      detail = 'the Kays turbulent Prandtl number model at a Prandtl number of 0.005, fluid on the neighbor side of the interface faces,'
+      recover = false # we don't support recovery for SIMPLE yet
+      max_threads = 1 # see libmesh issue #3808
+    []
+    # mu_t held at zero: k_eff reduces to k and the energy solution matches a
+    # laminar run with the k-epsilon systems removed
+    [laminar_limit]
+      type = CSVDiff
+      input = turbulent_cht_channel.i
+      cli_args = "AuxKernels/inactive='compute_mu_t' LinearFVBCs/inactive='walls_mu_t' "
+                 "AuxVariables/mu_t/initial_condition=0 "
+                 "Outputs/file_base=laminar_out Outputs/exodus=false"
+      csvdiff = 'laminar_out.csv laminar_out_fluid_profile_0001.csv '
+                'laminar_out_solid_bottom_profile_0001.csv laminar_out_solid_top_profile_0001.csv'
+      detail = 'and zero turbulent viscosity, which recovers the laminar conjugate heat transfer solution.'
+      recover = false # we don't support recovery for SIMPLE yet
+      max_threads = 1 # see libmesh issue #3808
+    []
+  []
+[]

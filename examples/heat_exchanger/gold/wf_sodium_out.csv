@@ -1,0 +1,2 @@
+time,H_in,H_out,Q_bottom_to_fluid,Q_bottom_to_solid,Q_solid_bottom_outer,Q_solid_top_outer,Q_top_to_fluid,Q_top_to_solid,T_fluid_bottom,T_fluid_top,T_solid_bottom,T_solid_top,cond_in,cond_out,k_eff_bottom,k_eff_top,mu_t_bottom,mu_t_top,ownership_ok
+1,-600,599.99999999998,20.313166702364,-20.313166687681,-20.313166702304,20.313166702301,-20.313166702371,20.313166687701,305.56494783857,294.43505216143,305.56494783857,294.43505216143,1.3057805704764e-14,0,0.029197080291971,0.029197080291971,0.00019985122837032,0.00019985122837032,1

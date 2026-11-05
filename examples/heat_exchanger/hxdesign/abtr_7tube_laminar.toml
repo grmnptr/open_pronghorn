@@ -1,0 +1,47 @@
+# ABTR IHX, 7-tube cut, laminar shakedown operating point
+# ========================================================
+# Reference companion to ../heat_exchanger_na_laminar.i (Phase 1 of
+# ../PLAN-sodium-turbulent-hx.md). For the record only: the operating point is
+# laminar (Re_tube = 1500), where the tool warns and the Ushakov shell-side
+# correlation is not valid, so this comparison is not pass/fail.
+#
+# Geometry as in abtr_ihx.toml [IHX-DDB-0001; SRC-chang2008-abtr-pcdr PDF p. 73],
+# but n_tubes = 7 and a 0.5 m length. Mass flows are rho*U*A of the CFD inlets
+# (ai-derived): rho = 852.9 kg/m3 at 694 K, U_tube = 0.03326 m/s over
+# A_t = 1.096e-3 m2, U_shell = 0.01715 m/s over A_s = 2.125e-3 m2.
+#
+# Units in this file: mm, m, °C, kPa, kg/s.
+
+name = "ABTR IHX 7-tube cut, laminar (CFD shakedown)"
+
+[geometry]
+tube_od_mm   = 15.9
+tube_wall_mm = 0.889
+pitch_mm     = 22.3
+n_tubes      = 7
+length_m     = 0.5      # CFD shakedown length, not the 3.85 m active length
+tube_roughness_um = 0.0
+
+[hot]   # primary sodium, shell side
+name       = "primary"
+side       = "shell"
+m_dot_kg_s = 0.03108    # CFD shell_mdot_in
+T_in_C     = 510.0
+
+[cold]  # secondary sodium, tube side
+name       = "secondary"
+side       = "tube"
+m_dot_kg_s = 0.03111    # CFD tube_mdot_in
+T_in_C     = 333.0
+
+[options]
+tube_nu   = "chen_chiou"
+shell_nu  = "ushakov"
+wall_material = "9Cr1Mo_ABTR"
+fouling_m2K_per_W = 0.0
+n_segments = 50
+hot_flow_direction = "down"
+k_tube_inlet  = 0.0     # the CFD has no inlet/outlet losses
+k_tube_outlet = 0.0
+k_shell_inlet = 0.0
+k_shell_outlet = 0.0

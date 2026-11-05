@@ -1,0 +1,46 @@
+# ABTR IHX, 7-tube cut, turbulent operating point
+# ================================================
+# Reference companion to ../heat_exchanger_na_turbulent.i (Phase 2 of
+# ../PLAN-sodium-turbulent-hx.md).
+#
+# Geometry as in abtr_ihx.toml [IHX-DDB-0001; SRC-chang2008-abtr-pcdr PDF p. 73],
+# but n_tubes = 7. Mass flows are the CFD inlet values rho*U*A
+# (ai-derived): rho = 852.9 kg/m3 at 694 K, U_tube = 1.424 m/s,
+# U_shell = 0.901 m/s, on the mesh flow areas. The 7-tube cut has 23.5 %
+# peripheral bypass, so the shell-side correlation is a band check only.
+#
+# Units in this file: mm, m, °C, kPa, kg/s.
+
+name = "ABTR IHX 7-tube cut, turbulent (CFD Phase 2)"
+
+[geometry]
+tube_od_mm   = 15.9
+tube_wall_mm = 0.889
+pitch_mm     = 22.3
+n_tubes      = 7
+length_m     = 3.85     # active tube length [IHX-DDB-0001]
+tube_roughness_um = 0.0
+
+[hot]   # primary sodium, shell side
+name       = "primary"
+side       = "shell"
+m_dot_kg_s = 1.6323     # CFD shell_mdot_in
+T_in_C     = 510.0
+
+[cold]  # secondary sodium, tube side
+name       = "secondary"
+side       = "tube"
+m_dot_kg_s = 1.3316     # CFD tube_mdot_in
+T_in_C     = 333.0
+
+[options]
+tube_nu   = "chen_chiou"
+shell_nu  = "ushakov"
+wall_material = "9Cr1Mo_ABTR"
+fouling_m2K_per_W = 0.0
+n_segments = 50
+hot_flow_direction = "down"
+k_tube_inlet  = 0.0     # the CFD has no inlet/outlet losses
+k_tube_outlet = 0.0
+k_shell_inlet = 0.0
+k_shell_outlet = 0.0

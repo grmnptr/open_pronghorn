@@ -28,7 +28,7 @@ drl_max_action = 1e-2
     max_control_value = ${drl_max_action}
 
     num_steps_in_period = ${drl_control_period_steps}
-    smoother = ${drl_action_smoother}
+    control_smoothing_factor = ${drl_action_smoother}
     stochastic = false
 
     num_neurons_per_layer = '512 512'
